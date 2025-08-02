@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driving School Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'orange-custom': '#FF6B35',
+                        'orange-light': '#FF8A5B'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8A5B 25%, #FFA07A 50%, #FFE4E1 75%, #FFFFFF 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px -3px rgba(255, 107, 53, 0.1), 0 4px 6px -2px rgba(255, 107, 53, 0.05);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Dark mode detection -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="flex h-screen">
+        <!-- Sidebar Navigation -->
+        <div class="w-64 bg-white/90 backdrop-blur-sm shadow-lg">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-orange-custom">🚗 DriveSchool</h1>
+                <p class="text-gray-600 text-sm mt-1">Management System</p>
+            </div>
+            
+            <nav class="mt-8">
+                <a href="#" onclick="showPage('dashboard')" class="nav-item flex items-center px-6 py-3 text-gray-700 hover:bg-orange-50 hover:text-orange-custom transition-colors duration-200" id="nav-dashboard">
+                    <span class="mr-3">📊</span>
+                    Dashboard
+                </a>
+                <a href="#" onclick="showPage('students')" class="nav-item flex items-center px-6 py-3 text-gray-700 hover:bg-orange-50 hover:text-orange-custom transition-colors duration-200" id="nav-students">
+                    <span class="mr-3">👥</span>
+                    Students
+                </a>
+                <a href="#" onclick="showPage('addStudent')" class="nav-item flex items-center px-6 py-3 text-gray-700 hover:bg-orange-50 hover:text-orange-custom transition-colors duration-200" id="nav-addStudent">
+                    <span class="mr-3">➕</span>
+                    Add Student
+                </a>
+                <a href="#" onclick="showPage('instructors')" class="nav-item flex items-center px-6 py-3 text-gray-700 hover:bg-orange-50 hover:text-orange-custom transition-colors duration-200" id="nav-instructors">
+                    <span class="mr-3">👨‍🏫</span>
+                    Instructors
+                </a>
+            </nav>
+
+            <!-- Cloud Sync Options -->
+            <div class="absolute bottom-6 left-6 right-6">
+                <div class="bg-orange-50 rounded-2xl p-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">☁️ Cloud Sync</h3>
+                    <div class="space-y-2">
+                        <button onclick="connectToCloud('sheets')" class="w-full text-left text-sm px-3 py-2 rounded-lg hover:bg-white transition-colors">📊 Google Sheets</button>
+                        <button onclick="connectToCloud('airtable')" class="w-full text-left text-sm px-3 py-2 rounded-lg hover:bg-white transition-colors">🗃️ Airtable</button>
+                        <button onclick="connectToCloud('firebase')" class="w-full text-left text-sm px-3 py-2 rounded-lg hover:bg-white transition-colors">🔥 Firebase</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page p-8">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Dashboard</h2>
+                    <p class="text-gray-600">Overview of your driving school</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Total Students</p>
+                                <p class="text-2xl font-bold text-gray-900" id="total-students">0</p>
+                            </div>
+                            <div class="text-orange-custom text-2xl">👥</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Unpaid Dues</p>
+                                <p class="text-2xl font-bold text-red-600" id="unpaid-dues">0</p>
+                            </div>
+                            <div class="text-red-500 text-2xl">💰</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Today's Sessions</p>
+                                <p class="text-2xl font-bold text-green-600" id="today-sessions">0</p>
+                            </div>
+                            <div class="text-green-500 text-2xl">📅</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-medium text-gray-600">Active Instructors</p>
+                                <p class="text-2xl font-bold text-blue-600" id="active-instructors">0</p>
+                            </div>
+                            <div class="text-blue-500 text-2xl">👨‍🏫</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Sessions -->
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">📅 Upcoming Sessions</h3>
+                    <div id="upcoming-sessions" class="space-y-3">
+                        <p class="text-gray-500">No upcoming sessions</p>
+                    </div>
+                </div>
+
+                <!-- Unpaid Dues -->
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">💰 Unpaid Dues</h3>
+                    <div id="unpaid-list" class="space-y-3">
+                        <p class="text-gray-500">All dues are paid!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Page -->
+            <div id="students" class="page hidden p-8">
+                <div class="mb-8 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">Students</h2>
+                        <p class="text-gray-600">Manage your students</p>
+                    </div>
+                    <button onclick="showPage('addStudent')" class="bg-orange-custom text-white px-6 py-3 rounded-2xl hover:bg-orange-600 transition-colors">➕ Add Student</button>
+                </div>
+
+                <!-- Filters -->
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <select id="filter-package" class="px-4 py-2 border border-gray-300 rounded-xl text-base">
+                            <option value="">All Packages</option>
+                            <option value="Basic">Basic</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Premium">Premium</option>
+                        </select>
+                        <select id="filter-instructor" class="px-4 py-2 border border-gray-300 rounded-xl text-base">
+                            <option value="">All Instructors</option>
+                        </select>
+                        <select id="filter-dues" class="px-4 py-2 border border-gray-300 rounded-xl text-base">
+                            <option value="">All Dues</option>
+                            <option value="paid">Paid</option>
+                            <option value="unpaid">Unpaid</option>
+                        </select>
+                        <button onclick="applyFilters()" class="bg-orange-custom text-white px-4 py-2 rounded-xl hover:bg-orange-600 transition-colors">Filter</button>
+                    </div>
+                </div>
+
+                <!-- Students List -->
+                <div id="students-list" class="space-y-4">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                        <p class="text-gray-500 text-center">No students found. Add your first student!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Student Page -->
+            <div id="addStudent" class="page hidden p-8">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Add Student</h2>
+                    <p class="text-gray-600">Enter student details</p>
+                </div>
+
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-8 card-shadow max-w-2xl">
+                    <form id="student-form" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Student Name</label>
+                            <input type="text" id="student-name" class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-orange-custom" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Package</label>
+                            <select id="student-package" class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-orange-custom" required>
+                                <option value="">Select Package</option>
+                                <option value="Basic">Basic</option>
+                                <option value="Standard">Standard</option>
+                                <option value="Premium">Premium</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Timing</label>
+                            <input type="datetime-local" id="student-timing" class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-orange-custom" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Instructor</label>
+                            <select id="student-instructor" class="w-full px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-orange-custom" required>
+                                <option value="">Select Instructor</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                            <div class="flex space-x-4">
+                                <button type="button" onclick="selectGender('male')" id="gender-male" class="gender-btn flex items-center justify-center w-16 h-16 border-2 border-gray-300 rounded-xl hover:border-orange-custom transition-colors">
+                                    <span class="text-2xl">🚹</span>
+                                </button>
+                                <button type="button" onclick="selectGender('female')" id="gender-female" class="gender-btn flex items-center justify-center w-16 h-16 border-2 border-gray-300 rounded-xl hover:border-orange-custom transition-colors">
+                                    <span class="text-2xl">🚺</span>
+                                </button>
+                            </div>
+                            <input type="hidden" id="student-gender" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Dues Status</label>
+                            <div class="flex space-x-4">
+                                <button type="button" onclick="selectDues('paid')" id="dues-paid" class="dues-btn px-6 py-3 border-2 border-gray-300 rounded-xl hover:border-green-500 transition-colors">
+                                    ✅ Paid
+                                </button>
+                                <button type="button" onclick="selectDues('unpaid')" id="dues-unpaid" class="dues-btn px-6 py-3 border-2 border-gray-300 rounded-xl hover:border-red-500 transition-colors">
+                                    ❌ Unpaid
+                                </button>
+                            </div>
+                            <input type="hidden" id="student-dues" required>
+                        </div>
+
+                        <div class="flex space-x-4">
+                            <button type="submit" class="flex-1 bg-orange-custom text-white py-3 rounded-xl hover:bg-orange-600 transition-colors font-medium">Add Student</button>
+                            <button type="button" onclick="resetForm()" class="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Reset</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Instructors Page -->
+            <div id="instructors" class="page hidden p-8">
+                <div class="mb-8 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-800 mb-2">Instructors</h2>
+                        <p class="text-gray-600">Manage your instructors</p>
+                    </div>
+                    <button onclick="showAddInstructorForm()" class="bg-orange-custom text-white px-6 py-3 rounded-2xl hover:bg-orange-600 transition-colors">➕ Add Instructor</button>
+                </div>
+
+                <!-- Add Instructor Form (hidden by default) -->
+                <div id="add-instructor-form" class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow mb-6 hidden">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Add New Instructor</h3>
+                    <div class="flex space-x-4">
+                        <input type="text" id="new-instructor-name" placeholder="Instructor Name" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-orange-custom">
+                        <button onclick="addInstructor()" class="bg-orange-custom text-white px-6 py-3 rounded-xl hover:bg-orange-600 transition-colors">Add</button>
+                        <button onclick="hideAddInstructorForm()" class="px-6 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+                    </div>
+                </div>
+
+                <!-- Instructors List -->
+                <div id="instructors-list" class="space-y-4">
+                    <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                        <p class="text-gray-500 text-center">No instructors found. Add your first instructor!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Confirmations -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+            <p id="modal-message" class="text-gray-700 mb-4"></p>
+            <div class="flex justify-end space-x-3">
+                <button id="modal-cancel" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl">Cancel</button>
+                <button id="modal-confirm" class="px-4 py-2 bg-orange-custom text-white hover:bg-orange-600 rounded-xl">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google Apps Script Configuration
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypAtzpZLtPEAGZeZPShcZXyqM_OMzsC3CTbXySESKmoENyf07MVsNq393zQHgueEyO/exec'; // Replace with your deployed Web App URL
+        
+        // Data Storage
+        let students = [];
+        let instructors = [];
+        let isOnline = true;
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            showPage('dashboard');
+            loadDataFromSheets();
+        });
+        
+        // Google Sheets Integration Functions
+        async function makeRequest(action, data = null) {
+            try {
+                const formData = new FormData();
+                formData.append('action', action);
+                if (data) {
+                    formData.append('data', JSON.stringify(data));
+                }
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                return result;
+            } catch (error) {
+                console.error('Request failed:', error);
+                showCustomAlert('Failed to sync with Google Sheets: ' + error.message);
+                isOnline = false;
+                return null;
+            }
+        }
+        
+        async function loadDataFromSheets() {
+            showLoadingState(true);
+            
+            try {
+                // Load students and instructors from Google Sheets
+                const [studentsResult, instructorsResult] = await Promise.all([
+                    makeRequest('getStudents'),
+                    makeRequest('getInstructors')
+                ]);
+                
+                if (studentsResult) {
+                    students = studentsResult;
+                }
+                
+                if (instructorsResult) {
+                    instructors = instructorsResult;
+                    // Add default instructors if none exist
+                    if (instructors.length === 0) {
+                        const defaultInstructors = ['John Smith', 'Sarah Johnson', 'Mike Davis', 'Lisa Wilson'];
+                        for (const instructor of defaultInstructors) {
+                            await addInstructorToSheets(instructor);
+                        }
+                        instructors = defaultInstructors;
+                    }
+                }
+                
+                isOnline = true;
+                populateInstructorDropdowns();
+                updateStats();
+                showLoadingState(false);
+                
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                showCustomAlert('Failed to load data from Google Sheets. Using offline mode.');
+                isOnline = false;
+                showLoadingState(false);
+                
+                // Fallback to default data
+                instructors = ['John Smith', 'Sarah Johnson', 'Mike Davis', 'Lisa Wilson'];
+                populateInstructorDropdowns();
+                updateStats();
+            }
+        }
+        
+        async function saveStudentToSheets(student) {
+            const result = await makeRequest('addStudent', student);
+            return result?.success || false;
+        }
+        
+        async function deleteStudentFromSheets(studentId) {
+            const result = await makeRequest('deleteStudent', { id: studentId });
+            return result?.success || false;
+        }
+        
+        async function addInstructorToSheets(name) {
+            const result = await makeRequest('addInstructor', { name: name });
+            return result?.success || false;
+        }
+        
+        async function deleteInstructorFromSheets(name) {
+            const result = await makeRequest('deleteInstructor', { name: name });
+            return result?.success || false;
+        }
+        
+        function showLoadingState(show) {
+            const loadingDiv = document.getElementById('loading-indicator') || createLoadingIndicator();
+            loadingDiv.style.display = show ? 'flex' : 'none';
+        }
+        
+        function createLoadingIndicator() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading-indicator';
+            loadingDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            loadingDiv.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 flex items-center space-x-4">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-custom"></div>
+                    <span class="text-gray-700">Syncing with Google Sheets...</span>
+                </div>
+            `;
+            document.body.appendChild(loadingDiv);
+            return loadingDiv;
+        }
+
+        // Navigation
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('bg-orange-50', 'text-orange-custom');
+            });
+            
+            // Show selected page
+            document.getElementById(pageId).classList.remove('hidden');
+            
+            // Add active class to current nav item
+            document.getElementById('nav-' + pageId).classList.add('bg-orange-50', 'text-orange-custom');
+            
+            // Update content based on page
+            if (pageId === 'students') {
+                renderStudents();
+            } else if (pageId === 'instructors') {
+                renderInstructors();
+            } else if (pageId === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // Gender Selection
+        function selectGender(gender) {
+            document.querySelectorAll('.gender-btn').forEach(btn => {
+                btn.classList.remove('border-orange-custom', 'bg-orange-50');
+            });
+            
+            document.getElementById('gender-' + gender).classList.add('border-orange-custom', 'bg-orange-50');
+            document.getElementById('student-gender').value = gender;
+        }
+
+        // Dues Selection
+        function selectDues(status) {
+            document.querySelectorAll('.dues-btn').forEach(btn => {
+                btn.classList.remove('border-green-500', 'bg-green-50', 'border-red-500', 'bg-red-50');
+            });
+            
+            if (status === 'paid') {
+                document.getElementById('dues-paid').classList.add('border-green-500', 'bg-green-50');
+            } else {
+                document.getElementById('dues-unpaid').classList.add('border-red-500', 'bg-red-50');
+            }
+            document.getElementById('student-dues').value = status;
+        }
+
+        // Form Handling
+        document.getElementById('student-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const student = {
+                id: Date.now(),
+                name: document.getElementById('student-name').value,
+                package: document.getElementById('student-package').value,
+                timing: document.getElementById('student-timing').value,
+                instructor: document.getElementById('student-instructor').value,
+                gender: document.getElementById('student-gender').value,
+                dues: document.getElementById('student-dues').value
+            };
+            
+            // Show loading state
+            showLoadingState(true);
+            
+            // Save to Google Sheets if online
+            if (isOnline) {
+                const success = await saveStudentToSheets(student);
+                if (!success) {
+                    showLoadingState(false);
+                    return; // Don't proceed if save failed
+                }
+            }
+            
+            // Add to local array
+            students.push(student);
+            
+            showLoadingState(false);
+            
+            // Show success message
+            showCustomAlert('Student added successfully!');
+            
+            // Reset form and go to students page
+            resetForm();
+            showPage('students');
+            updateStats();
+        });
+
+        function resetForm() {
+            document.getElementById('student-form').reset();
+            document.querySelectorAll('.gender-btn, .dues-btn').forEach(btn => {
+                btn.classList.remove('border-orange-custom', 'bg-orange-50', 'border-green-500', 'bg-green-50', 'border-red-500', 'bg-red-50');
+            });
+        }
+
+        // Populate Instructor Dropdowns
+        function populateInstructorDropdowns() {
+            const selects = [document.getElementById('student-instructor'), document.getElementById('filter-instructor')];
+            
+            selects.forEach(select => {
+                // Clear existing options (except first)
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                
+                instructors.forEach(instructor => {
+                    const option = document.createElement('option');
+                    option.value = instructor;
+                    option.textContent = instructor;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        // Render Students
+        function renderStudents() {
+            const container = document.getElementById('students-list');
+            
+            if (students.length === 0) {
+                container.innerHTML = '<div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow"><p class="text-gray-500 text-center">No students found. Add your first student!</p></div>';
+                return;
+            }
+            
+            container.innerHTML = students.map(student => `
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-2xl">${student.gender === 'male' ? '🚹' : '🚺'}</div>
+                            <div>
+                                <h3 class="font-bold text-gray-800">${student.name}</h3>
+                                <p class="text-gray-600">${student.package} Package</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-600">Instructor: ${student.instructor}</p>
+                            <p class="text-sm text-gray-600">Timing: ${new Date(student.timing).toLocaleString()}</p>
+                            <span class="inline-block px-3 py-1 rounded-full text-sm ${student.dues === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${student.dues === 'paid' ? '✅ Paid' : '❌ Unpaid'}</span>
+                        </div>
+                        <button onclick="deleteStudent(${student.id})" class="text-red-500 hover:text-red-700 ml-4">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Delete Student
+        function deleteStudent(id) {
+            showConfirmDialog('Are you sure you want to delete this student?', async () => {
+                showLoadingState(true);
+                
+                // Delete from Google Sheets if online
+                if (isOnline) {
+                    const success = await deleteStudentFromSheets(id);
+                    if (!success) {
+                        showLoadingState(false);
+                        return;
+                    }
+                }
+                
+                // Remove from local array
+                students = students.filter(student => student.id !== id);
+                
+                showLoadingState(false);
+                renderStudents();
+                updateStats();
+            });
+        }
+
+        // Filter Students
+        function applyFilters() {
+            const packageFilter = document.getElementById('filter-package').value;
+            const instructorFilter = document.getElementById('filter-instructor').value;
+            const duesFilter = document.getElementById('filter-dues').value;
+            
+            let filteredStudents = students;
+            
+            if (packageFilter) {
+                filteredStudents = filteredStudents.filter(s => s.package === packageFilter);
+            }
+            if (instructorFilter) {
+                filteredStudents = filteredStudents.filter(s => s.instructor === instructorFilter);
+            }
+            if (duesFilter) {
+                filteredStudents = filteredStudents.filter(s => s.dues === duesFilter);
+            }
+            
+            const container = document.getElementById('students-list');
+            
+            if (filteredStudents.length === 0) {
+                container.innerHTML = '<div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow"><p class="text-gray-500 text-center">No students match the selected filters.</p></div>';
+                return;
+            }
+            
+            container.innerHTML = filteredStudents.map(student => `
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-2xl">${student.gender === 'male' ? '🚹' : '🚺'}</div>
+                            <div>
+                                <h3 class="font-bold text-gray-800">${student.name}</h3>
+                                <p class="text-gray-600">${student.package} Package</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-600">Instructor: ${student.instructor}</p>
+                            <p class="text-sm text-gray-600">Timing: ${new Date(student.timing).toLocaleString()}</p>
+                            <span class="inline-block px-3 py-1 rounded-full text-sm ${student.dues === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${student.dues === 'paid' ? '✅ Paid' : '❌ Unpaid'}</span>
+                        </div>
+                        <button onclick="deleteStudent(${student.id})" class="text-red-500 hover:text-red-700 ml-4">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Instructor Management
+        function showAddInstructorForm() {
+            document.getElementById('add-instructor-form').classList.remove('hidden');
+        }
+
+        function hideAddInstructorForm() {
+            document.getElementById('add-instructor-form').classList.add('hidden');
+            document.getElementById('new-instructor-name').value = '';
+        }
+
+        async function addInstructor() {
+            const name = document.getElementById('new-instructor-name').value.trim();
+            if (name && !instructors.includes(name)) {
+                showLoadingState(true);
+                
+                // Save to Google Sheets if online
+                if (isOnline) {
+                    const success = await addInstructorToSheets(name);
+                    if (!success) {
+                        showLoadingState(false);
+                        return;
+                    }
+                }
+                
+                instructors.push(name);
+                populateInstructorDropdowns();
+                renderInstructors();
+                hideAddInstructorForm();
+                showLoadingState(false);
+                showCustomAlert('Instructor added successfully!');
+            }
+        }
+
+        function renderInstructors() {
+            const container = document.getElementById('instructors-list');
+            
+            if (instructors.length === 0) {
+                container.innerHTML = '<div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow"><p class="text-gray-500 text-center">No instructors found. Add your first instructor!</p></div>';
+                return;
+            }
+            
+            container.innerHTML = instructors.map((instructor, index) => `
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-6 card-shadow">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-2xl">👨‍🏫</div>
+                            <h3 class="font-bold text-gray-800">${instructor}</h3>
+                        </div>
+                        <button onclick="deleteInstructor(${index})" class="text-red-500 hover:text-red-700">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteInstructor(index) {
+            const instructor = instructors[index];
+            const hasStudents = students.some(student => student.instructor === instructor);
+            
+            if (hasStudents) {
+                showCustomAlert('Cannot delete instructor with assigned students.');
+                return;
+            }
+            
+            showConfirmDialog('Are you sure you want to delete this instructor?', async () => {
+                showLoadingState(true);
+                
+                // Delete from Google Sheets if online
+                if (isOnline) {
+                    const success = await deleteInstructorFromSheets(instructor);
+                    if (!success) {
+                        showLoadingState(false);
+                        return;
+                    }
+                }
+                
+                instructors.splice(index, 1);
+                populateInstructorDropdowns();
+                renderInstructors();
+                updateStats();
+                showLoadingState(false);
+            });
+        }
+
+        // Dashboard Updates
+        function updateStats() {
+            document.getElementById('total-students').textContent = students.length;
+            document.getElementById('unpaid-dues').textContent = students.filter(s => s.dues === 'unpaid').length;
+            document.getElementById('active-instructors').textContent = instructors.length;
+            
+            // Today's sessions
+            const today = new Date().toDateString();
+            const todaySessions = students.filter(s => new Date(s.timing).toDateString() === today);
+            document.getElementById('today-sessions').textContent = todaySessions.length;
+        }
+
+        function updateDashboard() {
+            updateStats();
+            
+            // Upcoming sessions
+            const upcoming = students
+                .filter(s => new Date(s.timing) > new Date())
+                .sort((a, b) => new Date(a.timing) - new Date(b.timing))
+                .slice(0, 5);
+            
+            const upcomingContainer = document.getElementById('upcoming-sessions');
+            if (upcoming.length === 0) {
+                upcomingContainer.innerHTML = '<p class="text-gray-500">No upcoming sessions</p>';
+            } else {
+                upcomingContainer.innerHTML = upcoming.map(session => `
+                    <div class="flex items-center justify-between p-3 bg-orange-50 rounded-xl">
+                        <div>
+                            <span class="font-medium">${session.name}</span>
+                            <span class="text-gray-600 ml-2">with ${session.instructor}</span>
+                        </div>
+                        <span class="text-sm text-gray-600">${new Date(session.timing).toLocaleString()}</span>
+                    </div>
+                `).join('');
+            }
+            
+            // Unpaid dues
+            const unpaid = students.filter(s => s.dues === 'unpaid');
+            const unpaidContainer = document.getElementById('unpaid-list');
+            if (unpaid.length === 0) {
+                unpaidContainer.innerHTML = '<p class="text-gray-500">All dues are paid!</p>';
+            } else {
+                unpaidContainer.innerHTML = unpaid.map(student => `
+                    <div class="flex items-center justify-between p-3 bg-red-50 rounded-xl">
+                        <span class="font-medium">${student.name}</span>
+                        <span class="text-sm text-red-600">${student.package} Package</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Cloud Sync Functions
+        function connectToCloud(service) {
+            if (service === 'sheets') {
+                if (APPS_SCRIPT_URL === 'YOUR_WEB_APP_URL_HERE') {
+                    showCustomAlert('Please update the APPS_SCRIPT_URL in the code with your deployed Google Apps Script URL.');
+                } else {
+                    showCustomAlert('Google Sheets integration is active! Your data is being synced automatically.');
+                }
+            } else {
+                const messages = {
+                    airtable: 'Connect to Airtable for powerful database features and collaboration.',
+                    firebase: 'Connect to Firebase for real-time data sync and backup.'
+                };
+                
+                showCustomAlert(`${messages[service]} This feature will be available when deployed outside the iframe environment.`);
+            }
+        }
+
+        // Custom Alert and Confirm Functions
+        function showCustomAlert(message) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+                    <p class="text-gray-700 mb-4">${message}</p>
+                    <div class="flex justify-end">
+                        <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-orange-custom text-white hover:bg-orange-600 rounded-xl">OK</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function showConfirmDialog(message, onConfirm) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+                    <p class="text-gray-700 mb-4">${message}</p>
+                    <div class="flex justify-end space-x-3">
+                        <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl">Cancel</button>
+                        <button onclick="this.closest('.fixed').remove(); (${onConfirm})()" class="px-4 py-2 bg-orange-custom text-white hover:bg-orange-600 rounded-xl">Confirm</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+    </script>
+</body>
+</html>
